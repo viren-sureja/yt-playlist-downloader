@@ -6,7 +6,7 @@ import math
 import time
 
 # Hardcoded playlist URL
-playlist_url = "https://www.youtube.com/playlist?list=PLFr_jkwUp0hjcRpskdwHubPXLXeSKcZ5r"
+playlist_url = input("Playlist URL: ")
 
 # Create an instance of the playlist
 playlist = Playlist(playlist_url)
@@ -27,13 +27,7 @@ for video_url in video_urls:
 
     # Retrieve the video file size in bytes
     response = requests.head(video_url)
-    file_size_bytes = int(response.headers.get('Content-Length', 0))
 
-    # Calculate the video file size in megabytes (MB)
-    file_size_mb = file_size_bytes / (1024 * 1024)
-
-    # Initialize inner progress bar for current video
-    inner_pbar = tqdm(total=file_size_mb, desc=f"Downloading {video.title}", unit='MB', unit_divisor=1024, leave=False)
 
     retries = 0
     success = False
@@ -42,18 +36,26 @@ for video_url in video_urls:
         try:
             # Download the video
             stream = video.streams.get_highest_resolution()
+            file_size_bytes = int(stream.filesize)
+
+            # Calculate the video file size in megabytes (MB)
+            file_size_mb = file_size_bytes / (1024 * 1024)
+
+            # Initialize inner progress bar for current video
+            inner_pbar = tqdm(total=file_size_mb, desc=f"Downloading {video.title}", unit='MB',
+                              unit_scale=True, leave=False)
             chunk_size = 1024 * 1024  # 1 MB
             response = requests.get(stream.url, stream=True)
             with open(f"{video.title}.{stream.subtype}", "wb") as file:
                 bytes_downloaded = 0
                 start_time = time.time()
+
                 for chunk in response.iter_content(chunk_size=chunk_size):
                     file.write(chunk)
-                    bytes_downloaded += len(chunk)
-                    progress_fraction = min(bytes_downloaded / file_size_bytes, 1.0)
-                    inner_pbar.update(progress_fraction * file_size_mb)
+                    chunk_size_in_MB = len(chunk) / (1024 * 1024)
+                    bytes_downloaded += chunk_size_in_MB
+                    inner_pbar.update(chunk_size_in_MB)
                     download_speed = bytes_downloaded / (time.time() - start_time)
-                    inner_pbar.set_postfix(speed=f"{download_speed:.2f} MB/s")
 
             success = True
         except Exception as e:

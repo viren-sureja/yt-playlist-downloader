@@ -1,3 +1,5 @@
 /yt-plist-dwnld
 .DS_Store
 *.mp4
+.vscode
+.pytest_cache
