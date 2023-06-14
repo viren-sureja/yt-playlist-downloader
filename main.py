@@ -5,14 +5,17 @@ from tqdm import tqdm
 import math
 import time
 
-# Hardcoded playlist URL
-playlist_url = input("Playlist URL: ")
+# Take input for the playlist URL
+playlist_url = input("Enter the playlist URL: ")
 
 # Create an instance of the playlist
 playlist = Playlist(playlist_url)
 
 # Retrieve the list of video URLs in the playlist
 video_urls = playlist.video_urls
+
+# Take input for the download location
+download_location = input("Enter the download location: ")
 
 # Initialize outer progress bar for overall progress
 outer_pbar = tqdm(total=len(video_urls), desc="Overall Progress")
@@ -21,7 +24,7 @@ outer_pbar = tqdm(total=len(video_urls), desc="Overall Progress")
 max_retries = 3
 
 # Download each video in the playlist with progress bars
-for video_url in video_urls:
+for index, video_url in enumerate(video_urls, start=1):
     # Create a YouTube object for the current video
     video = YouTube(video_url)
 
@@ -46,7 +49,12 @@ for video_url in video_urls:
                               unit_scale=True, leave=False)
             chunk_size = 1024 * 1024  # 1 MB
             response = requests.get(stream.url, stream=True)
-            with open(f"{video.title}.{stream.subtype}", "wb") as file:
+
+            # Set the download location and file name
+            video_title = f"{index}_{'_'.join(video.title.split(' '))}"
+            file_path = f"{download_location}/{video_title}.{stream.subtype}"
+
+            with open(file_path, "wb") as file:
                 bytes_downloaded = 0
                 start_time = time.time()
 
